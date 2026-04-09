@@ -1,0 +1,9 @@
+.codex
+bin/
+build/
+tmp/
+*.o
+*.out
+*.log
+*.zip
+fs.img
