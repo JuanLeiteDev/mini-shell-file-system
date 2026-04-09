@@ -4,18 +4,24 @@
 
 #define TAMANHO_BUFFER 1024
 
+void escrevaErro(const int fd, const char msg[]){
+    int len = 0;
+    while(msg[len] != '\0') len++;
+    write(fd, msg, len);
+}
+
 int main(int argc, char *argv[]){
     if(argc != 2){
-        write(STDERR_FILENO, "Uso: mostra <ficheiro>\n", 24);
+        escrevaErro(2, "Uso: mostra <ficheiro>\n");
         return 1;
     }
 
     int fd = open(argv[1], O_RDONLY);
     if(fd == -1){
         if(errno == ENOENT){
-            write(STDERR_FILENO, "O ficheiro não existe.\n", 24);
+            escrevaErro(2, "O ficheiro não existe.\n");
         } else {
-            write(STDERR_FILENO, "Erro ao tentar abrir ficheiro.\n", 32);
+            escrevaErro(2, "Erro ao tentar abrir ficheiro.\n");
         }
         return 1;
     }
@@ -27,7 +33,7 @@ int main(int argc, char *argv[]){
     }
 
     if(bytes_lidos == -1){
-        write(STDERR_FILENO, "Erro ao tentar ler ficheiro.\n", 29);
+        escrevaErro(2, "Erro ao tentar ler ficheiro.\n");
         close(fd);
         return 1;
     }
