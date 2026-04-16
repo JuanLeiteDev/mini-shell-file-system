@@ -10,7 +10,7 @@ int main(int argc, char *argv[]){
     if(naoExiste(fd, argv[1])) return 1;
 
     int inicio = 0;
-    int arr[3] = {0, 0, 0};
+    unsigned int arr[3] = {0, 0, 0};
     char buffer[TAMANHO_BUFFER];
     ssize_t bytes_lidos = 0;
 
@@ -38,9 +38,13 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < 3;i++){
         int tamanho = 0;
+        char aux[TAMANHO_BUFFER];
         converteInt(arr[i], buffer, &tamanho);
-        write(STDOUT_FILENO, buffer, tamanho);
+        buffer[tamanho] = ' ';
+        buffer[tamanho+1] = '\0';
+        write(STDOUT_FILENO, buffer, tamanho+1);
     }
+    write(STDOUT_FILENO, argv[1], sizeof(argv[1]));
 
     close(fd);
     return 0;
