@@ -11,3 +11,4 @@ ficheiro.txt
 *.exe
 src/commands/mostra
 src/commands/copia
+teste.c
