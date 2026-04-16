@@ -9,3 +9,5 @@ tmp/
 fs.img
 ficheiro.txt
 *.exe
+src/commands/mostra
+src/commands/copia
