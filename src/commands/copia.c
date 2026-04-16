@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../include/utils.h"
 
 int main(int argc, char *argv[]) {
     if(argc != 3){
@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     }
 
     int fd_origem = open(argv[1], O_RDONLY);
-    if(naoExiste(fd_origem)) return 1;
+    if(naoExiste(fd_origem, argv[1])) return 1;
 
     int fd_check = open(argv[2], O_RDONLY);
     if(fd_check != -1){
