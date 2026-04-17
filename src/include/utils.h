@@ -7,6 +7,8 @@
 
 #define TAMANHO_BUFFER 1024
 
+void escreva(char msg[]);
+
 void escrevaErro(char msg[]);
 
 int naoExiste(int fd, char nomeFicheiro[]);

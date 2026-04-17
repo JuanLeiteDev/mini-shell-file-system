@@ -1,5 +1,11 @@
 #include "utils.h"
 
+void escreva(char msg[]){
+    int len = 0;
+    while(msg[len] != '\0') len++;
+    write(STDIN_FILENO, msg, len);
+}
+
 void escrevaErro(char msg[]){
     int len = 0;
     while(msg[len] != '\0') len++;
