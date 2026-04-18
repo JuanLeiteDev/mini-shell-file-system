@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
 
 #define TAMANHO_BUFFER 1024
 
