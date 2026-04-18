@@ -18,9 +18,6 @@ void concatenarString(char s1[], char s2[]){
 
     while(s1[i] != '\0') i++;
 
-    s1[i] = ' ';
-    i++;
-
     while(s2[j] != '\0'){
         s1[i+j] = s2[j];
         j++;
@@ -32,12 +29,12 @@ void concatenarString(char s1[], char s2[]){
 int naoExiste(int fd, char nomeFicheiro[]){
     if(fd == -1){
         if(errno == ENOENT){
-            char aviso[TAMANHO_BUFFER] = "O ficheiro não existe";
+            char aviso[TAMANHO_BUFFER] = "O ficheiro não existe ";
             concatenarString(nomeFicheiro, "\n");
             concatenarString(aviso, nomeFicheiro);
             escrevaErro(aviso);
         } else {
-            char aviso[TAMANHO_BUFFER] = "Erro ao abrir ficheiro";
+            char aviso[TAMANHO_BUFFER] = "Erro ao abrir ficheiro ";
             concatenarString(nomeFicheiro, "\n");
             concatenarString(aviso, nomeFicheiro);
             escrevaErro(aviso);

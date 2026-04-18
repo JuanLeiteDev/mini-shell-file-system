@@ -1,5 +1,4 @@
 #include "../include/utils.h"
-#include <stdio.h>
 
 int ehBissexto(int ano) {
     if ((ano % 400) == 0) return 1;
@@ -117,78 +116,81 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    // Obter Inode do arquivo
-    unsigned long i_node = dados.st_ino;
-    converteLong(i_node, aux, &tamanho);
-    char permissoes[11];
+    // Inode
+    final[0] = '\0';
+    converteLong(dados.st_ino, aux, &tamanho);
+    concatenarString(final, aux);
+    concatenarString(final, " ");
 
-    // Analisar de que tipo é o arquivo
-    if (S_ISDIR(dados.st_mode)) permissoes[0] = 'd';
-    else if (S_ISREG(dados.st_mode)) permissoes[0] = '-';
-    else if (S_ISLNK(dados.st_mode)) permissoes[0] = 'l';
-    else if (S_ISCHR(dados.st_mode)) permissoes[0] = 'c';
-    else if (S_ISBLK(dados.st_mode)) permissoes[0] = 'b';
+    // Tipo de ficheiro (caractere) + permissões simbólicas
+    char permissoes[11];
+    if      (S_ISDIR(dados.st_mode))  permissoes[0] = 'd';
+    else if (S_ISREG(dados.st_mode))  permissoes[0] = '-';
+    else if (S_ISLNK(dados.st_mode))  permissoes[0] = 'l';
+    else if (S_ISCHR(dados.st_mode))  permissoes[0] = 'c';
+    else if (S_ISBLK(dados.st_mode))  permissoes[0] = 'b';
     else if (S_ISFIFO(dados.st_mode)) permissoes[0] = 'p';
     else if (S_ISSOCK(dados.st_mode)) permissoes[0] = 's';
-    
-    // Verificar e guardar permissões
-    permissoes[1] = (dados.st_mode & S_IRUSR) ? 'r' : '-';
-    permissoes[2] = (dados.st_mode & S_IWUSR) ? 'w' : '-';
-    permissoes[3] = (dados.st_mode & S_IXUSR) ? 'x' : '-';
-    permissoes[4] = (dados.st_mode & S_IRGRP) ? 'r' : '-';
-    permissoes[5] = (dados.st_mode & S_IWGRP) ? 'w' : '-';
-    permissoes[6] = (dados.st_mode & S_IXGRP) ? 'x' : '-';
-    permissoes[7] = (dados.st_mode & S_IROTH) ? 'r' : '-';
-    permissoes[8] = (dados.st_mode & S_IWOTH) ? 'w' : '-';
-    permissoes[9] = (dados.st_mode & S_IXOTH) ? 'x' : '-';
+    else                              permissoes[0] = '?';
+
+    permissoes[1]  = (dados.st_mode & S_IRUSR) ? 'r' : '-';
+    permissoes[2]  = (dados.st_mode & S_IWUSR) ? 'w' : '-';
+    permissoes[3]  = (dados.st_mode & S_IXUSR) ? 'x' : '-';
+    permissoes[4]  = (dados.st_mode & S_IRGRP) ? 'r' : '-';
+    permissoes[5]  = (dados.st_mode & S_IWGRP) ? 'w' : '-';
+    permissoes[6]  = (dados.st_mode & S_IXGRP) ? 'x' : '-';
+    permissoes[7]  = (dados.st_mode & S_IROTH) ? 'r' : '-';
+    permissoes[8]  = (dados.st_mode & S_IWOTH) ? 'w' : '-';
+    permissoes[9]  = (dados.st_mode & S_IXOTH) ? 'x' : '-';
     permissoes[10] = '\0';
 
-    // Concatena informações iniciais para a string final
-    concatenarString(final, aux);
     concatenarString(final, permissoes);
+    concatenarString(final, " ");
 
-    // Quantidade de links para esse arquivo e concatena no final da string
-    unsigned long nLinks = dados.st_nlink;
-    converteLong(nLinks, aux, &tamanho);
+    // Número de links
+    converteLong(dados.st_nlink, aux, &tamanho);
     concatenarString(final, aux);
+    concatenarString(final, " ");
 
-    // Obtém o UID do usuário dono do arquivo
+    // Utilizador dono
     unsigned int user_id = dados.st_uid;
     converteInt(user_id, aux, &tamanho);
 
-    // Abre um ficheiro onde contém as informações necessárias para obter o nome do dono atráves do UID
     int fd = open("/etc/passwd", O_RDONLY);
     if(fd != -1){
-        char nome[100];
-        nome[0] = '\0';
-        if(procurarNomeUser(fd, aux, nome)){
-            concatenarString(final, nome);
-            close(fd);
+        char nomeUtilizador[100];
+        nomeUtilizador[0] = '\0';
+        if(procurarNomeUser(fd, aux, nomeUtilizador)){
+            concatenarString(final, nomeUtilizador);
         } else {
             char msg[50] = "UID:";
             concatenarString(msg, aux);
             concatenarString(final, msg);
-            close(fd);
         }
+        close(fd);
     } else {
         char msg[50] = "UID:";
         concatenarString(msg, aux);
-        concatenarString(final, msg);  
-        close(fd);
+        concatenarString(final, msg);
     }
+    concatenarString(final, " ");
 
-    // Obtém tamanho do arquivo e concatena no final da string principal
-    unsigned long tamanho_arquivo = dados.st_size;
-    converteLong(tamanho_arquivo, aux, &tamanho);
+    // Tamanho em bytes
+    converteLong((unsigned long)dados.st_size, aux, &tamanho);
     concatenarString(final, aux);
+    concatenarString(final, " ");
 
+    // Data de modificação
     char data[20];
-    if (timestampParaString((unsigned long)dados.st_ctime, data, sizeof(data)) != NULL) {
+    if(timestampParaString((unsigned long)dados.st_ctime, data, sizeof(data)) != NULL){
         concatenarString(final, data);
+        concatenarString(final, " ");
     }
 
+    // Nome do ficheiro
     concatenarString(final, argv[1]);
     escreva(final);
     escreva("\n");
+
     return 0;
 }
