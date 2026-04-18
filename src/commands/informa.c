@@ -1,105 +1,5 @@
 #include "../include/utils.h"
 
-int ehBissexto(int ano) {
-    if ((ano % 400) == 0) return 1;
-    if ((ano % 100) == 0) return 0;
-    if ((ano % 4) == 0) return 1;
-    return 0;
-}
-
-char *timestampParaString(unsigned long timestamp, char buffer[], size_t tamanhoBuffer) {
-    unsigned long dias;
-    int segundos;
-    int minutos;
-    int horas;
-    int dia;
-    int mes;
-    int ano;
-    int diasNoAno;
-    int i;
-
-    int diasMeses[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
-
-    if (buffer == NULL) {
-        return NULL;
-    }
-
-    if (tamanhoBuffer < 20) {
-        if (tamanhoBuffer > 0) {
-            buffer[0] = '\0';
-        }
-        return NULL;
-    }
-
-    segundos = timestamp % 60;
-    timestamp /= 60;
-
-    minutos = timestamp % 60;
-    timestamp /= 60;
-
-    horas = timestamp % 24;
-    timestamp /= 24;
-
-    dias = timestamp;
-    ano = 1970;
-
-    while (1) {
-        diasNoAno = ehBissexto(ano) ? 366 : 365;
-
-        if (dias >= (unsigned long)diasNoAno) {
-            dias -= diasNoAno;
-            ano++;
-        } else {
-            break;
-        }
-    }
-
-    if (ehBissexto(ano)) {
-        diasMeses[1] = 29;
-    }
-
-    mes = 0;
-    while (mes < 12 && dias >= (unsigned long)diasMeses[mes]) {
-        dias -= diasMeses[mes];
-        mes++;
-    }
-
-    if (mes >= 12) {
-        buffer[0] = '\0';
-        return NULL;
-    }
-
-    dia = (int)dias + 1;
-    mes = mes + 1;
-
-    for (i = 0; i < (int)tamanhoBuffer; i++) {
-        buffer[i] = '\0';
-    }
-
-    buffer[0]  = (dia / 10) + '0';
-    buffer[1]  = (dia % 10) + '0';
-    buffer[2]  = '/';
-    buffer[3]  = (mes / 10) + '0';
-    buffer[4]  = (mes % 10) + '0';
-    buffer[5]  = '/';
-    buffer[6]  = ((ano / 1000) % 10) + '0';
-    buffer[7]  = ((ano / 100) % 10) + '0';
-    buffer[8]  = ((ano / 10) % 10) + '0';
-    buffer[9]  = (ano % 10) + '0';
-    buffer[10] = ' ';
-    buffer[11] = (horas / 10) + '0';
-    buffer[12] = (horas % 10) + '0';
-    buffer[13] = ':';
-    buffer[14] = (minutos / 10) + '0';
-    buffer[15] = (minutos % 10) + '0';
-    buffer[16] = ':';
-    buffer[17] = (segundos / 10) + '0';
-    buffer[18] = (segundos % 10) + '0';
-    buffer[19] = '\0';
-
-    return buffer;
-}
-
 int main(int argc, char *argv[]){
     if(argc != 2){
         escrevaErro("Uso: informa <ficheiro>\n");
@@ -181,11 +81,11 @@ int main(int argc, char *argv[]){
     concatenarString(final, " ");
 
     // Data de modificação
-    char data[20];
-    if(timestampParaString((unsigned long)dados.st_ctime, data, sizeof(data)) != NULL){
-        concatenarString(final, data);
-        concatenarString(final, " ");
-    }
+    char *data = ctime(&(dados.st_atime));
+    concatenarString(final, data);
+    tamanho = 0;
+    while(final[tamanho] != '\0') tamanho++;
+    final[tamanho-1] = ' ';
 
     // Nome do ficheiro
     concatenarString(final, argv[1]);
