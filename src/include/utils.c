@@ -150,3 +150,7 @@ int procurarNomeUser(int fd, char userID[], char userNome[]){
     }
     if(bytes_lidos == -1) return 0;
 }
+
+void limpaTela(){
+    escreva("\e[1;1H\e[2J");
+}

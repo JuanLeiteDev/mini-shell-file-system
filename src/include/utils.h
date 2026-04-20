@@ -24,3 +24,5 @@ void converteLong(unsigned long num, char *buffer, int *total_bytes);
 int strIgual(char s1[], char s2[]);
 
 int procurarNomeUser(int fd, char userID[], char userNome[]);
+
+void limpaTela();
