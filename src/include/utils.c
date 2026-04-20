@@ -1,5 +1,11 @@
 #include "utils.h"
 
+void escreva(char msg[]){
+    int len = 0;
+    while(msg[len] != '\0') len++;
+    write(STDIN_FILENO, msg, len);
+}
+
 void escrevaErro(char msg[]){
     int len = 0;
     while(msg[len] != '\0') len++;
@@ -12,9 +18,6 @@ void concatenarString(char s1[], char s2[]){
 
     while(s1[i] != '\0') i++;
 
-    s1[i] = ' ';
-    i++;
-
     while(s2[j] != '\0'){
         s1[i+j] = s2[j];
         j++;
@@ -26,12 +29,12 @@ void concatenarString(char s1[], char s2[]){
 int naoExiste(int fd, char nomeFicheiro[]){
     if(fd == -1){
         if(errno == ENOENT){
-            char aviso[TAMANHO_BUFFER] = "O ficheiro não existe";
+            char aviso[TAMANHO_BUFFER] = "O ficheiro não existe ";
             concatenarString(nomeFicheiro, "\n");
             concatenarString(aviso, nomeFicheiro);
             escrevaErro(aviso);
         } else {
-            char aviso[TAMANHO_BUFFER] = "Erro ao abrir ficheiro";
+            char aviso[TAMANHO_BUFFER] = "Erro ao abrir ficheiro ";
             concatenarString(nomeFicheiro, "\n");
             concatenarString(aviso, nomeFicheiro);
             escrevaErro(aviso);
@@ -44,8 +47,7 @@ int naoExiste(int fd, char nomeFicheiro[]){
 void converteInt(unsigned int num, char *buffer, int *total_bytes){
     if(num == 0){
         buffer[0] = '0';
-        buffer[1] = ' ';
-        buffer[2] = '\0';
+        buffer[1] = '\0';
         *total_bytes = 2;
         return;
     }
@@ -147,4 +149,8 @@ int procurarNomeUser(int fd, char userID[], char userNome[]){
         contador_lidos = 0;  
     }
     if(bytes_lidos == -1) return 0;
+}
+
+void limpaTela(){
+    escreva("\e[1;1H\e[2J");
 }

@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
     }
 
     if(bytes_lidos == -1){
-        escrevaErro("Erro ao escrever no ficheiro de destino.\n");
+        escrevaErro("Erro ao ler o ficheiro de origem.\n");
         close(fd_origem);
         close(fd_destino);
         return 1;
