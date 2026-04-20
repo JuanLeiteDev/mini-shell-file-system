@@ -47,8 +47,7 @@ int naoExiste(int fd, char nomeFicheiro[]){
 void converteInt(unsigned int num, char *buffer, int *total_bytes){
     if(num == 0){
         buffer[0] = '0';
-        buffer[1] = ' ';
-        buffer[2] = '\0';
+        buffer[1] = '\0';
         *total_bytes = 2;
         return;
     }
