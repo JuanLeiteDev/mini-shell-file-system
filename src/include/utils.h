@@ -10,12 +10,12 @@
 #include <sys/wait.h>
 
 #define TAMANHO_BUFFER 1024
-#define TAMANHO_CONTASETA 10
+#define TAMANHO_CONTADOR 10
 
-typedef struct ContaSeta {
-    int arr[TAMANHO_CONTASETA];
+typedef struct Contador {
+    int arr[TAMANHO_CONTADOR];
     int qtd;
-} ContaSeta;
+} Contador;
 
 void escreva(char msg[]);
 
