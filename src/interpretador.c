@@ -1,6 +1,7 @@
 #include "./include/utils.h"
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <stdio.h>
 
 void escrevaCaminho() {
     char caminhoAtual[TAMANHO_BUFFER];
@@ -93,6 +94,8 @@ int main(){
     limpaTela();
     do{
         char buffer[TAMANHO_BUFFER];
+        char aux[TAMANHO_BUFFER];
+        int tamanho_aux = 0;
         escrevaCaminho();
 
         ssize_t bytes_lidos = read(STDIN_FILENO, buffer, TAMANHO_BUFFER);
@@ -120,8 +123,26 @@ int main(){
         if(pid == 0){
             execv(caminho_comandos, argumentos);
             escrevaErro("Erro ao executar comando.\n");
+            _exit(1);
         } else {
-            wait(NULL);
+            int status;
+            if(waitpid(pid, &status, 0) == -1){
+                escrevaErro("Erro ao executar comando.\n");
+            }
+            if (WIFEXITED(status)) {
+                int codigo = WEXITSTATUS(status);
+                if(codigo != 0){
+                    converteInt(codigo, aux, &tamanho_aux);
+                    char msg[TAMANHO_BUFFER] = "O comando não foi concluído com sucesso. Código de saída: ";
+                    concatenarString(msg, aux);
+                    escrevaErro(msg);
+                    escreva("\n");
+                } else {
+                    escreva("O comando terminou com sucesso lógico. Código de saída: 0\n");
+                }
+            } else {
+                escrevaErro("O comando terminou de forma não esperada.\n");
+            }
         }
 
     } while(1);
