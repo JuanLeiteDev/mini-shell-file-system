@@ -28,17 +28,19 @@ void concatenarString(char s1[], char s2[]){
 
 int naoExiste(int fd, char nomeFicheiro[]){
     if(fd == -1){
+        char aviso[TAMANHO_BUFFER];
         if(errno == ENOENT){
-            char aviso[TAMANHO_BUFFER] = "O ficheiro não existe ";
-            concatenarString(nomeFicheiro, "\n");
+            aviso[0] = '\0';
+            concatenarString(aviso, "O ficheiro não existe: ");
             concatenarString(aviso, nomeFicheiro);
-            escrevaErro(aviso);
+            concatenarString(aviso, "\n");
         } else {
-            char aviso[TAMANHO_BUFFER] = "Erro ao abrir ficheiro ";
-            concatenarString(nomeFicheiro, "\n");
+            aviso[0] = '\0';
+            concatenarString(aviso, "Erro ao abrir ficheiro: ");
             concatenarString(aviso, nomeFicheiro);
-            escrevaErro(aviso);
+            concatenarString(aviso, "\n");
         }
+        escrevaErro(aviso);
         return 1;
     }
     return 0;

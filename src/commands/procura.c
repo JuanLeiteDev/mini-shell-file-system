@@ -38,9 +38,12 @@ int main(int argc, char *argv[]){
 
     int fd;
     if(argc >= 3){
-        concatenarString(padrao, argv[1]);
-        fd = open(argv[2], O_RDONLY);
-        if(naoExiste(fd, argv[2])) return 1;
+        for(int i = 2; i <= argc-1; i++){
+            concatenarString(padrao, argv[i]);
+            if(i < argc-1) concatenarString(padrao, " ");
+        }
+        fd = open(argv[1], O_RDONLY);
+        if(naoExiste(fd, argv[1])) return 1;
     } else {
         concatenarString(padrao, argv[1]);
         fd = STDIN_FILENO;

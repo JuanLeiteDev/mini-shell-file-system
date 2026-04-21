@@ -96,6 +96,7 @@ int main(){
         escrevaCaminho();
 
         ssize_t bytes_lidos = read(STDIN_FILENO, buffer, TAMANHO_BUFFER);
+        if(bytes_lidos <= 0) return 0;
         buffer[bytes_lidos] = '\0';
 
         char *argumentos[TAMANHO_BUFFER];
@@ -133,6 +134,7 @@ int main(){
         if(seta_esquerda.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas uma \"<\"\n"); continue; }
 
         pid_t pid = fork();
+        if(pid < 0){ escrevaErro("Erro ao criar processo.\n"); continue; }
         if(pid == 0){
             if(seta_direita.qtd == 1){
                 if(argumentos[(seta_direita.arr[0])+1] != NULL){
