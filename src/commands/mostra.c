@@ -1,19 +1,24 @@
 #include "../include/utils.h"
 
 int main(int argc, char *argv[]){
-    if(argc != 2){
-        escrevaErro("Uso: mostra <ficheiro>\n");
+    if(argc > 2){
+        escrevaErro("Uso: mostra [ficheiro]\n");
         return 1;
     }
 
-    int fd = open(argv[1], O_RDONLY);
-    if(fd == -1){
-        if(errno == ENOENT){
-            escrevaErro("O ficheiro não existe.\n");
-        } else {
-            escrevaErro("Erro ao abrir ficheiro.\n");
+    int fd;
+    if(argc == 2){
+        fd = open(argv[1], O_RDONLY);
+        if(fd == -1){
+            if(errno == ENOENT){
+                escrevaErro("O ficheiro não existe.\n");
+            } else {
+                escrevaErro("Erro ao abrir ficheiro.\n");
+            }
+            return 1;
         }
-        return 1;
+    } else {
+        fd = STDIN_FILENO;
     }
 
     char buffer[TAMANHO_BUFFER];
@@ -24,10 +29,10 @@ int main(int argc, char *argv[]){
 
     if(bytes_lidos == -1){
         escrevaErro("Erro ao ler ficheiro.\n");
-        close(fd);
+        if(fd != STDIN_FILENO) close(fd);
         return 1;
     }
 
-    close(fd);
+    if(fd != STDIN_FILENO) close(fd);
     return 0;
 }

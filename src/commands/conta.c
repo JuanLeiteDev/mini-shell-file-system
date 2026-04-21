@@ -1,13 +1,18 @@
 #include "../include/utils.h"
 
 int main(int argc, char *argv[]){
-    if(argc != 2){
-        escrevaErro("Uso: conta <ficheiro>\n");
+    if(argc > 2){
+        escrevaErro("Uso: conta [ficheiro]\n");
         return 1;
     }
 
-    int fd = open(argv[1], O_RDONLY);
-    if(naoExiste(fd, argv[1])) return 1;
+    int fd;
+    if(argc == 2){
+        fd = open(argv[1], O_RDONLY);
+        if(naoExiste(fd, argv[1])) return 1;
+    } else {
+        fd = STDIN_FILENO;
+    }
 
     int emPalavra = 0;
     unsigned int linhas = 0, palavras = 0, caracteres = 0;
@@ -36,7 +41,7 @@ int main(int argc, char *argv[]){
 
     if(bytes_lidos == -1){
         escrevaErro("Erro ao ler ficheiro.\n");
-        close(fd);
+        if(fd != STDIN_FILENO) close(fd);
         return 1;
     }
 
@@ -49,11 +54,15 @@ int main(int argc, char *argv[]){
         write(STDOUT_FILENO, buffer, tamanho+1);
     }
 
-    int tamanho_nome = 0;
-    while(argv[1][tamanho_nome] != '\0') tamanho_nome++;
-    write(STDOUT_FILENO, argv[1], tamanho_nome);
+    if(argc == 2){
+        int tamanho_nome = 0;
+        while(argv[1][tamanho_nome] != '\0') tamanho_nome++;
+        write(STDOUT_FILENO, argv[1], tamanho_nome);
+    } else {
+        write(STDOUT_FILENO, "stdin", 5);
+    }
     write(STDOUT_FILENO, "\n", 1);
 
-    close(fd);
+    if(fd != STDIN_FILENO) close(fd);
     return 0;
 }

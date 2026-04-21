@@ -1,7 +1,4 @@
 #include "./include/utils.h"
-#include <sys/syscall.h>
-#include <sys/wait.h>
-#include <stdio.h>
 
 void escrevaCaminho() {
     char caminhoAtual[TAMANHO_BUFFER];
@@ -119,8 +116,59 @@ int main(){
         concatenarString(caminho_comandos, argumentos[0]);
         if(verificarExistencia(caminho_comandos) < 0) {escrevaErro("Comando não encontrado.\n"); continue; }
 
+        ContaSeta seta_direita;
+        ContaSeta seta_esquerda;
+        seta_direita.qtd = 0, seta_esquerda.qtd = 0;
+        for(int i = 0; i < nArgumentos; i++){
+            if(strIgual(argumentos[i], ">")){
+                seta_direita.arr[seta_direita.qtd] = i; 
+                seta_direita.qtd++; 
+            } else if(strIgual(argumentos[i], "<")){
+                seta_esquerda.arr[seta_esquerda.qtd] = i;
+                seta_esquerda.qtd++;
+            }
+        }
+        
+        if(seta_direita.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas uma \">\"\n"); continue; }
+        if(seta_esquerda.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas uma \"<\"\n"); continue; }
+
         pid_t pid = fork();
         if(pid == 0){
+            if(seta_direita.qtd == 1){
+                if(argumentos[(seta_direita.arr[0])+1] != NULL){
+                    int fd = open(argumentos[(seta_direita.arr[0])+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                    if(fd == -1){
+                        escrevaErro("Erro ao abrir ficheiro de redirecionamento.\n");
+                        _exit(1);
+                     } else {
+                        dup2(fd, STDOUT_FILENO);
+                        close(fd);
+                        argumentos[(seta_direita.arr[0])] = NULL;
+                    }
+                } else {
+                    escrevaErro("Nenhum ficheiro especificado para redirecionamento.\n");
+                    _exit(1);
+                }
+            }
+            if(seta_esquerda.qtd == 1){
+                if(argumentos[(seta_esquerda.arr[0])+1] != NULL){
+                    int fd = open(argumentos[(seta_esquerda.arr[0])+1], O_RDONLY);
+                    if(fd == -1){
+                        escrevaErro("Erro ao abrir ficheiro de redirecionamento.\n");
+                        _exit(1);
+                     } else {
+                        dup2(fd, STDIN_FILENO);
+                        close(fd);
+                        for(int i = seta_esquerda.arr[0]; ; i++){
+                            argumentos[i] = argumentos[i+2];
+                            if(argumentos[i] == NULL) break;
+                        }
+                    }
+                } else {
+                    escrevaErro("Nenhum ficheiro especificado para redirecionamento.\n");
+                    _exit(1);
+                }
+            }
             execv(caminho_comandos, argumentos);
             escrevaErro("Erro ao executar comando.\n");
             _exit(1);
