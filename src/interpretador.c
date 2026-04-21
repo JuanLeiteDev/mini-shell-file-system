@@ -117,9 +117,10 @@ int main(){
         concatenarString(caminho_comandos, argumentos[0]);
         if(verificarExistencia(caminho_comandos) < 0) {escrevaErro("Comando não encontrado.\n"); continue; }
 
-        ContaSeta seta_direita;
-        ContaSeta seta_esquerda;
-        seta_direita.qtd = 0, seta_esquerda.qtd = 0;
+        Contador seta_direita;
+        Contador seta_esquerda;
+        Contador conta_pipe;
+        seta_direita.qtd = 0, seta_esquerda.qtd = 0, conta_pipe.qtd = 0;
         for(int i = 0; i < nArgumentos; i++){
             if(strIgual(argumentos[i], ">")){
                 seta_direita.arr[seta_direita.qtd] = i; 
@@ -127,11 +128,15 @@ int main(){
             } else if(strIgual(argumentos[i], "<")){
                 seta_esquerda.arr[seta_esquerda.qtd] = i;
                 seta_esquerda.qtd++;
+            } else if(strIgual(argumentos[i], "|")){
+                conta_pipe.arr[conta_pipe.qtd] = i;
+                conta_pipe.qtd++;
             }
         }
         
         if(seta_direita.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas uma \">\"\n"); continue; }
         if(seta_esquerda.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas uma \"<\"\n"); continue; }
+        if(conta_pipe.qtd > 1){ escrevaErro("Erro na digitação. É aceitável apenas um \"|\"\n"); continue; }
 
         pid_t pid = fork();
         if(pid < 0){ escrevaErro("Erro ao criar processo.\n"); continue; }
@@ -165,15 +170,56 @@ int main(){
                             argumentos[i] = argumentos[i+2];
                             if(argumentos[i] == NULL) break;
                         }
+                        // Bug 3: atualiza índice do pipe se o '<' veio antes dele
+                        if(conta_pipe.qtd == 1 && seta_esquerda.arr[0] < conta_pipe.arr[0])
+                            conta_pipe.arr[0] -= 2;
                     }
                 } else {
                     escrevaErro("Nenhum ficheiro especificado para redirecionamento.\n");
                     _exit(1);
                 }
             }
-            execv(caminho_comandos, argumentos);
-            escrevaErro("Erro ao executar comando.\n");
-            _exit(1);
+
+            if(conta_pipe.qtd > 0){
+                int fd[2];
+                if(pipe(fd) == -1){ escrevaErro("Erro ao executar o pipe.\n"); _exit(1); }
+
+                pid_t pid2 = fork();
+                if(pid2 < 0){ escrevaErro("Erro ao executar fork.\n"); _exit(1); }
+                if(pid2 == 0){
+                    close(fd[0]);
+                    dup2(fd[1], STDOUT_FILENO);
+                    close(fd[1]); // Bug 4: fecha fd original após dup2
+                    argumentos[conta_pipe.arr[0]] = NULL;
+                    execv(caminho_comandos, argumentos);
+                    escrevaErro("Erro ao executar primeiro comando.\n");
+                    _exit(1);
+                } else {
+                    // Bug 1: fecha escrita ANTES de executar segundo comando
+                    // (sem waitpid — ambos correm concorrentemente, evitando deadlock)
+                    close(fd[1]);
+                    for(int i = 0;; i++){
+                        argumentos[i] = argumentos[i+conta_pipe.arr[0]+1];
+                        if(argumentos[i] == NULL) break;
+                    }
+                    // Bug 2: segundo comando ausente após '|'
+                    if(argumentos[0] == NULL){
+                        escrevaErro("Nenhum comando especificado após '|'.\n");
+                        _exit(1);
+                    }
+                    obterDiretorioRaiz(caminho_comandos, caminhoLen);
+                    concatenarString(caminho_comandos, argumentos[0]);
+                    dup2(fd[0], STDIN_FILENO);
+                    close(fd[0]); // Bug 4: fecha fd original após dup2
+                    execv(caminho_comandos, argumentos);
+                    escrevaErro("Erro ao executar segundo comando.\n");
+                    _exit(1);
+                }
+            } else {
+                execv(caminho_comandos, argumentos);
+                escrevaErro("Erro ao executar comando.\n");
+                _exit(1);
+            }
         } else {
             int status;
             if(waitpid(pid, &status, 0) == -1){
