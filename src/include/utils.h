@@ -6,8 +6,16 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/syscall.h>
+#include <sys/wait.h>
 
 #define TAMANHO_BUFFER 1024
+#define TAMANHO_CONTADOR 10
+
+typedef struct Contador {
+    int arr[TAMANHO_CONTADOR];
+    int qtd;
+} Contador;
 
 void escreva(char msg[]);
 

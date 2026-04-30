@@ -28,20 +28,26 @@ void imprimeLinha(int numLinha, char *linha) {
 }
 
 int main(int argc, char *argv[]){
-    if(argc < 3){
-        escrevaErro("Uso: procura <ficheiro> <padrao>\n");
+    if(argc < 2){
+        escrevaErro("Uso: procura [ficheiro] <padrao>\n");
         return 1;
     }
 
     char padrao[TAMANHO_BUFFER];
     padrao[0] = '\0';
-    for(int i = 2; i <= argc-1; i++){
-        concatenarString(padrao, argv[i]);
-        if(i < argc-1) concatenarString(padrao, " ");
-    }
 
-    int fd = open(argv[1], O_RDONLY);
-    if(naoExiste(fd, argv[1])) return 1;
+    int fd;
+    if(argc >= 3){
+        for(int i = 2; i <= argc-1; i++){
+            concatenarString(padrao, argv[i]);
+            if(i < argc-1) concatenarString(padrao, " ");
+        }
+        fd = open(argv[1], O_RDONLY);
+        if(naoExiste(fd, argv[1])) return 1;
+    } else {
+        concatenarString(padrao, argv[1]);
+        fd = STDIN_FILENO;
+    }
 
     char linha[TAMANHO_BUFFER];
     char buffer[1];
@@ -76,7 +82,7 @@ int main(int argc, char *argv[]){
 
     if(bytes_lidos == -1){
         escrevaErro("Erro ao ler ficheiro.\n");
-        close(fd);
+        if(fd != STDIN_FILENO) close(fd);
         return 1;
     }
 
@@ -84,6 +90,6 @@ int main(int argc, char *argv[]){
         escreva("Nenhuma linha encontrada.\n");
     }
 
-    close(fd);
+    if(fd != STDIN_FILENO) close(fd);
     return 0;
 }
