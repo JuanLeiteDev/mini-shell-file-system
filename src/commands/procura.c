@@ -29,7 +29,7 @@ void imprimeLinha(int numLinha, char *linha) {
 
 int main(int argc, char *argv[]){
     if(argc < 2){
-        escrevaErro("Uso: procura <padrao> [ficheiro]\n");
+        escrevaErro("Uso: procura [ficheiro] <padrao>\n");
         return 1;
     }
 
