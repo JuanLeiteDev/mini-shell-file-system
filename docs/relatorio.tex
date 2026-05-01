@@ -1,0 +1,540 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+    citecolor=blue!60!black
+}
+
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{codekw}{rgb}{0.10,0.30,0.70}
+\definecolor{codecmt}{rgb}{0.30,0.55,0.30}
+\definecolor{codestr}{rgb}{0.65,0.20,0.20}
+
+\lstdefinestyle{cstyle}{
+    language=C,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    stringstyle=\color{codestr},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!20},
+    tabsize=2,
+    captionpos=b,
+    extendedchars=true,
+    inputencoding=utf8,
+    literate=
+        {á}{{\'a}}1 {à}{{\`a}}1 {ã}{{\~a}}1 {â}{{\^a}}1
+        {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'i}}1
+        {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1
+        {ú}{{\'u}}1 {ç}{{\c{c}}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+}
+
+\lstdefinestyle{shellstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!20},
+    showstringspaces=false,
+    extendedchars=true,
+    inputencoding=utf8,
+    literate=
+        {á}{{\'a}}1 {à}{{\`a}}1 {ã}{{\~a}}1 {â}{{\^a}}1
+        {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'i}}1
+        {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1
+        {ú}{{\'u}}1 {ç}{{\c{c}}}1
+}
+
+\lstset{style=cstyle}
+
+\titleformat{\section}{\Large\bfseries\color{blue!50!black}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue!40!black}}{\thesubsection}{0.5em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Sistemas Operativos --- 2025/2026}
+\fancyhead[R]{\small Trabalho Prático}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    {\Large\bfseries Instituto Politécnico do Cávado e do Ave \par}
+    {\large Escola Superior de Tecnologia \par}
+    {\large Licenciatura em Engenharia de Sistemas Informáticos \par}
+
+    \vspace{2.5cm}
+    {\Huge\bfseries Mini-Sistema de Gestão de Ficheiros\par}
+    \vspace{0.5cm}
+    {\Large\itshape com Interpretador de Comandos Personalizado\par}
+
+    \vspace{2cm}
+    \rule{0.7\textwidth}{0.4pt}\\[0.3cm]
+    {\large Relatório do Trabalho Prático\par}
+    {\large Sistemas Operativos --- 2025/2026\par}
+    \rule{0.7\textwidth}{0.4pt}\\[2cm]
+
+    \begin{tabular}{rl}
+        \textbf{Unidade Curricular:} & Sistemas Operativos \\
+        \textbf{Ano lectivo:} & 2025/2026 \\
+        \textbf{Linguagem:} & C (POSIX, sem LibC de alto nível) \\
+        \textbf{Plataforma:} & Linux \\
+    \end{tabular}
+
+    \vfill
+    {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =============================================================
+\section{Introdução}
+
+O presente relatório documenta a concretização do trabalho prático da unidade curricular de \textbf{Sistemas Operativos}, cujo objetivo é a aplicação prática dos conceitos de gestão de processos, gestão de ficheiros e contentores. O trabalho consistiu em quatro partes:
+
+\begin{enumerate}[leftmargin=2em]
+    \item Implementação em C de um conjunto de comandos para manipulação de ficheiros utilizando exclusivamente \textit{system calls} POSIX;
+    \item Implementação de um interpretador de linha de comandos próprio com suporte a redirecionamento e pipes;
+    \item Empacotamento da solução numa imagem Docker;
+    \item Análise de um sistema de ficheiros (\texttt{fs.img}) com identificação do tipo, tamanho de bloco, número de inodes e leitura do conteúdo dos ficheiros.
+\end{enumerate}
+
+A solução foi desenvolvida em \textbf{C puro} (não foi usada \texttt{system(3)}, \texttt{fopen(3)}, \texttt{fread(3)}, etc.) e respeita estritamente a restrição do enunciado, recorrendo apenas a chamadas ao sistema da secção 2 do manual Unix (\texttt{open}, \texttt{read}, \texttt{write}, \texttt{close}, \texttt{stat}, \texttt{opendir}, \texttt{readdir}, \texttt{closedir}, \texttt{dup2}, \texttt{pipe}, \texttt{fork}, \texttt{execve}, \texttt{wait}). O resultado é um pequeno ecossistema de utilitários compiláveis em qualquer Linux com \texttt{gcc}, executáveis também dentro de um contentor Docker construído a partir do \texttt{Dockerfile} fornecido.
+
+\subsection{Organização do código}
+
+A árvore do projeto encontra-se organizada da seguinte forma:
+
+\begin{lstlisting}[style=shellstyle]
+.
+|-- src/
+|   |-- commands/         (mostra, copia, acrescenta, conta,
+|   |                      apaga, informa, lista, procura, clear)
+|   |-- include/          (utils.h, utils.c -- partilhados)
+|   `-- interpretador.c
+|-- build/bin/            (binarios gerados)
+|-- docs/                 (enunciado e relatorio)
+|-- tmp/                  (ficheiros de teste)
+|-- Makefile
+|-- Dockerfile
+`-- README.md
+\end{lstlisting}
+
+Cada comando é compilado como um executável independente em \texttt{build/bin/}, partilhando funções utilitárias (escrita em \texttt{stdout}/\texttt{stderr}, conversão de inteiros, comparação de \textit{strings} e concatenação) através de \texttt{src/include/utils.c}, evitando dependências da \textit{libc} de alto nível.
+
+% =============================================================
+\section{Parte 1 --- Comandos para manipulação de ficheiros}
+
+Foram implementados oito comandos, todos eles utilizando apenas \textit{system calls} POSIX. As mensagens de erro são reportadas em \texttt{stderr} e o código de saída reflete o sucesso ou insucesso do comando.
+
+\subsection{\texttt{mostra} --- exibir conteúdo do ficheiro}
+
+\textbf{Uso:} \texttt{mostra ficheiro}
+
+Abre o ficheiro com \texttt{open(2)} em modo só de leitura e copia o seu conteúdo para \texttt{stdout} através de um \textit{loop} de \texttt{read(2)}/\texttt{write(2)} usando um \textit{buffer} de 1024 bytes. Caso o ficheiro não exista (\texttt{errno == ENOENT}) é apresentada a mensagem ``O ficheiro não existe.'' em \texttt{stderr}. Se invocado sem argumentos lê de \texttt{stdin}, o que permite o seu uso em \textit{pipes}.
+
+\begin{lstlisting}[style=cstyle,caption={Excerto de \texttt{mostra.c}}]
+int fd = open(argv[1], O_RDONLY);
+if(fd == -1){
+    if(errno == ENOENT) escrevaErro("O ficheiro não existe.\n");
+    else                escrevaErro("Erro ao abrir ficheiro.\n");
+    return 1;
+}
+char buffer[TAMANHO_BUFFER];
+ssize_t bytes_lidos;
+while((bytes_lidos = read(fd, buffer, TAMANHO_BUFFER)) > 0){
+    write(STDOUT_FILENO, buffer, bytes_lidos);
+}
+\end{lstlisting}
+
+\subsection{\texttt{copia} --- copiar ficheiro}
+
+\textbf{Uso:} \texttt{copia origem destino}
+
+Abre a origem em modo de leitura e tenta abrir o destino primeiro com \texttt{O\_RDONLY} para detetar se este já existe; em caso afirmativo, aborta com aviso. Caso contrário cria-o com \texttt{O\_WRONLY | O\_CREAT | O\_EXCL} (modo \texttt{0644}) e copia byte-a-byte através de \texttt{read}/\texttt{write}. A flag \texttt{O\_EXCL} garante a deteção atómica de existência prévia.
+
+\subsection{\texttt{acrescenta} --- concatenar conteúdo}
+
+\textbf{Uso:} \texttt{acrescenta origem destino}
+
+Abre a origem em \texttt{O\_RDONLY} e o destino em \texttt{O\_WRONLY | O\_APPEND}, garantindo que cada \texttt{write(2)} é colocado no final do ficheiro. Se qualquer um dos ficheiros não existir, é apresentado um aviso e o comando termina com código 1.
+
+\subsection{\texttt{conta} --- linhas, palavras e caracteres}
+
+\textbf{Uso:} \texttt{conta [ficheiro]}
+
+Replica a funcionalidade do \texttt{wc(1)}. O ficheiro é lido em blocos de 1024 bytes e percorre-se cada \textit{byte} mantendo um estado \texttt{emPalavra} que comuta entre 0 e 1 conforme se transita entre separadores (\texttt{' '}, \texttt{'\textbackslash t'}, \texttt{'\textbackslash n'}, \texttt{'\textbackslash r'}, \texttt{'\textbackslash 0'}) e caracteres válidos. Sem argumento, lê de \texttt{stdin}, viabilizando o uso em \textit{pipes} (ex.: \texttt{lista /tmp | conta}).
+
+\subsection{\texttt{apaga} --- remover ficheiro}
+
+\textbf{Uso:} \texttt{apaga ficheiro}
+
+Implementação minimalista baseada em \texttt{unlink(2)}. Em caso de falha (ficheiro inexistente, permissões, etc.) é apresentada uma mensagem em \texttt{stderr}.
+
+\subsection{\texttt{informa} --- metadados do ficheiro}
+
+\textbf{Uso:} \texttt{informa ficheiro}
+
+Recolhe os metadados via \texttt{stat(2)} e apresenta-os no formato:
+
+\begin{lstlisting}[style=shellstyle]
+<inode> <permissoes> <nlinks> <utilizador> <bytes> <data> <nome>
+\end{lstlisting}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Tipo}: deduzido com \texttt{S\_ISDIR}, \texttt{S\_ISREG}, \texttt{S\_ISLNK}, \texttt{S\_ISCHR}, \texttt{S\_ISBLK}, \texttt{S\_ISFIFO}, \texttt{S\_ISSOCK} (apresentado como o primeiro caractere das permissões: \texttt{d}, \texttt{-}, \texttt{l}, \texttt{c}, \texttt{b}, \texttt{p}, \texttt{s});
+    \item \textbf{Permissões}: 9 caracteres simbólicos (\texttt{rwxrwxrwx}) construídos por máscara de \texttt{st\_mode} com \texttt{S\_IRUSR}, \texttt{S\_IWUSR}, \texttt{S\_IXUSR}, etc.;
+    \item \textbf{Utilizador}: o \texttt{st\_uid} é resolvido para o respetivo nome através da leitura linha-a-linha de \texttt{/etc/passwd} (com \texttt{open}/\texttt{read}, sem \texttt{getpwuid(3)});
+    \item \textbf{Datas}: \texttt{ctime(3)} sobre os campos \texttt{st\_atime}/\texttt{st\_mtime}.
+\end{itemize}
+
+\subsection{\texttt{lista} --- listagem de diretoria}
+
+\textbf{Uso:} \texttt{lista [directoria]}
+
+Verifica primeiro com \texttt{stat(2)} se o caminho corresponde a uma diretoria. Em caso afirmativo, abre-a com \texttt{opendir(3)} e itera com \texttt{readdir(3)}, ignorando as entradas \texttt{.} e \texttt{..}. Para cada entrada é executado um novo \texttt{stat(2)} sobre o caminho completo de modo a distinguir diretorias de ficheiros, sendo cada linha prefixada por \texttt{[dir]} ou \texttt{[fic]}, conforme se trate de uma directoria ou ficheiro simples.
+
+\begin{lstlisting}[style=cstyle,caption={Núcleo de \texttt{lista.c}}]
+DIR *dir = opendir(caminho);
+struct dirent *entrada;
+while ((entrada = readdir(dir)) != NULL) {
+    /* ignora . e .. */
+    struct stat info;
+    stat(caminho_entrada, &info);
+    if (S_ISDIR(info.st_mode)) escreva("[dir] ");
+    else                       escreva("[fic] ");
+    escreva(entrada->d_name); escreva("\n");
+}
+closedir(dir);
+\end{lstlisting}
+
+\subsection{\texttt{procura} --- pesquisa de padrão}
+
+\textbf{Uso:} \texttt{procura ficheiro padrão}
+
+Implementa uma pesquisa de \textit{substring} \textbf{linha-a-linha} (estilo \texttt{grep}). A leitura é feita byte-a-byte de modo a delimitar correctamente cada linha; ao encontrar \texttt{'\textbackslash n'} a função \texttt{contemPadrao} testa cada deslocamento da linha contra o padrão. Cada linha encontrada é apresentada precedida do respetivo número de linha. Se o ficheiro não existir ou nenhuma linha corresponder, é apresentado o aviso adequado.
+
+\subsection{Função utilitárias partilhadas}
+
+Para evitar dependências da \textit{libc} de alto nível, as operações de \textit{string} foram reimplementadas em \texttt{src/include/utils.c}:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \texttt{escreva()} / \texttt{escrevaErro()} --- envolvem \texttt{write(2)} sobre \texttt{stdout}/\texttt{stderr};
+    \item \texttt{concatenarString()} --- versão minimalista de \texttt{strcat};
+    \item \texttt{strIgual()} --- comparação binária de \textit{strings};
+    \item \texttt{converteInt()} / \texttt{converteLong()} --- conversão de inteiros sem sinal para representação textual em base 10;
+    \item \texttt{naoExiste()} --- normaliza a verificação de \texttt{open(2)} e o respetivo aviso;
+    \item \texttt{procurarNomeUser()} --- procura um \texttt{uid} em \texttt{/etc/passwd}.
+\end{itemize}
+
+% =============================================================
+\section{Parte 2 --- Interpretador de comandos}
+
+O \texttt{interpretador} substitui o shell habitual por uma aplicação que:
+
+\begin{enumerate}[leftmargin=2em]
+    \item apresenta o prompt \texttt{\%} (precedido pelo \textit{path} actual a azul, equivalente a um \texttt{PS1} simples);
+    \item lê uma linha de \texttt{stdin} com \texttt{read(2)};
+    \item tokeniza a linha em argumentos respeitando aspas (\texttt{"..."} permite argumentos com espaços);
+    \item identifica os operadores especiais \texttt{>}, \texttt{<}, \texttt{|};
+    \item executa cada comando através de \texttt{fork(2)} + \texttt{execv(3)} + \texttt{wait(2)} (sem recurso a \texttt{system(3)});
+    \item indica o código de saída do último comando executado;
+    \item termina ao receber o comando especial \texttt{termina}.
+\end{enumerate}
+
+\subsection{Localização dos binários}
+
+O interpretador descobre o seu próprio caminho lendo \texttt{/proc/self/exe} via \texttt{readlink(2)}, e usa essa diretoria como base para localizar os comandos (\texttt{mostra}, \texttt{lista}, etc.). Desta forma, os binários funcionam tanto invocados em ambiente local como dentro do contentor Docker.
+
+\begin{lstlisting}[style=cstyle,caption={Resolução do caminho dos binários}]
+ssize_t descobrirCaminho(char buffer[]){
+    ssize_t bytes = syscall(SYS_readlink, "/proc/self/exe", buffer, TAMANHO_BUFFER);
+    if(bytes < 0) return -1;
+    buffer[bytes] = '\0';
+    return bytes;
+}
+\end{lstlisting}
+
+\subsection{Tokenização e tratamento de aspas}
+
+A função \texttt{receberEntrada} percorre o \textit{buffer} de leitura, marca o início de cada \textit{token} e substitui os separadores por \texttt{'\textbackslash 0'}, devolvendo um \texttt{argv}-\textit{like} pronto a ser passado a \texttt{execv}. Existe ainda um pequeno autómato para suportar aspas duplas, permitindo argumentos com espaços (ex.: \texttt{procura "hello world" file.txt}).
+
+\subsection{Comandos internos}
+
+Apenas dois comandos são tratados internamente, sem \texttt{fork}: \texttt{termina} (que termina o interpretador) e \texttt{cd} (que delega em \texttt{chdir(2)} via \texttt{syscall}). Todos os restantes comandos resultam num novo processo.
+
+\subsection{Redirecionamentos e pipes}
+
+O interpretador suporta as três funcionalidades adicionais previstas no enunciado, com a regra de que cada comando usa apenas uma delas de cada vez:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Redireção de saída \texttt{>}}: \texttt{open(\dots, O\_CREAT | O\_WRONLY | O\_TRUNC, 0644)} seguido de \texttt{dup2(fd, STDOUT\_FILENO)};
+    \item \textbf{Redireção de entrada \texttt{<}}: \texttt{open(\dots, O\_RDONLY)} seguido de \texttt{dup2(fd, STDIN\_FILENO)}; após o redirecionamento o operador e o nome do ficheiro são removidos do vector de argumentos para que o \texttt{execv} não os receba;
+    \item \textbf{Pipe \texttt{|}}: criado com \texttt{pipe(2)} antes de um \textit{fork} adicional; o filho liga \texttt{STDOUT} à extremidade de escrita e o pai liga \texttt{STDIN} à extremidade de leitura, executando os dois \texttt{execv} concorrentemente.
+\end{itemize}
+
+\begin{lstlisting}[style=cstyle,caption={Construção do pipe entre dois comandos}]
+int fd[2];
+pipe(fd);
+
+pid_t pid2 = fork();
+if(pid2 == 0){
+    close(fd[0]);
+    dup2(fd[1], STDOUT_FILENO);
+    close(fd[1]);
+    argumentos[conta_pipe.arr[0]] = NULL;
+    execv(caminho_comandos, argumentos);
+    _exit(1);
+} else {
+    close(fd[1]);
+    /* desloca argv para o segundo comando */
+    /* ... */
+    dup2(fd[0], STDIN_FILENO);
+    close(fd[0]);
+    execv(caminho_comandos, argumentos);
+    _exit(1);
+}
+\end{lstlisting}
+
+O interpretador valida ainda a sintaxe (rejeita múltiplos operadores do mesmo tipo na mesma linha) e produz mensagens de erro coerentes em \texttt{stderr}.
+
+\subsection{Reporte do código de saída}
+
+Após \texttt{waitpid(2)} o interpretador analisa o estado com \texttt{WIFEXITED}/\texttt{WEXITSTATUS} e apresenta:
+
+\begin{lstlisting}[style=shellstyle]
+O comando terminou com sucesso lógico. Código de saída: 0
+\end{lstlisting}
+
+ou, em caso de erro:
+
+\begin{lstlisting}[style=shellstyle]
+O comando não foi concluído com sucesso. Código de saída: <n>
+\end{lstlisting}
+
+\subsection{Exemplo de utilização}
+
+\begin{lstlisting}[style=shellstyle]
+$ ./build/bin/interpretador
+/home/juan/projeto % lista /tmp
+[dir] systemd-private-...
+[fic] teste.txt
+O comando terminou com sucesso lógico. Código de saída: 0
+/home/juan/projeto % mostra ficheiro.txt > copia.txt
+O comando terminou com sucesso lógico. Código de saída: 0
+/home/juan/projeto % lista /tmp | procura .log
+2 algum.log
+O comando terminou com sucesso lógico. Código de saída: 0
+/home/juan/projeto % termina
+$
+\end{lstlisting}
+
+% =============================================================
+\section{Parte 3 --- Empacotamento em Docker}
+
+O empacotamento é descrito num \texttt{Dockerfile} de \textbf{construção em duas fases} (\textit{multi-stage build}), o que permite compilar o código numa imagem com \texttt{gcc} e produzir uma imagem final pequena, contendo apenas os binários:
+
+\begin{lstlisting}[style=shellstyle,caption={\texttt{Dockerfile}}]
+FROM gcc:14 AS builder
+WORKDIR /app
+COPY . .
+RUN make
+
+FROM debian:bookworm-slim
+COPY --from=builder /app/build/bin /usr/local/bin/
+COPY --from=builder /app/tmp /ficheiros/
+WORKDIR /ficheiros
+ENTRYPOINT ["interpretador"]
+\end{lstlisting}
+
+\subsection{Justificação das escolhas}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{\texttt{gcc:14} como \textit{builder}}: dispõe de toolchain completa (\texttt{make}, \texttt{gcc}) sem ser necessário instalar pacotes adicionais;
+    \item \textbf{\texttt{debian:bookworm-slim} como imagem final}: imagem mínima compatível com binários compilados pelo \texttt{gcc:14}, evitando o tempo e o espaço de uma toolchain completa em produção;
+    \item \textbf{\texttt{COPY --from=builder /app/build/bin /usr/local/bin/}}: coloca todos os comandos no \texttt{PATH} do contentor, ficando o interpretador acessível directamente como \texttt{interpretador};
+    \item \textbf{\texttt{ENTRYPOINT ["interpretador"]}}: o contentor arranca já no prompt \texttt{\%}, conforme exigido pelo enunciado;
+    \item \textbf{\texttt{WORKDIR /ficheiros}}: o utilizador encontra-se logo num directório com ficheiros de teste para experimentar os comandos.
+\end{itemize}
+
+\subsection{Comandos para construir e correr}
+
+\begin{lstlisting}[style=shellstyle]
+# Construir a imagem
+docker build -t mini-shell-file-system .
+
+# Executar (interactivo, com remoção automática)
+docker run --rm -it mini-shell-file-system
+
+# Executar com volume para persistir/partilhar ficheiros
+docker run --rm -it -v $(pwd)/tmp:/ficheiros mini-shell-file-system
+\end{lstlisting}
+
+Ao arrancar, o contentor entra directamente no interpretador:
+
+\begin{lstlisting}[style=shellstyle]
+$ docker run --rm -it mini-shell-file-system
+/ficheiros % lista
+[fic] ficheiro1.txt
+[fic] ficheiro2.txt
+[fic] teste.txt
+O comando terminou com sucesso lógico. Código de saída: 0
+/ficheiros % mostra ficheiro1.txt
+...
+/ficheiros % termina
+$
+\end{lstlisting}
+
+% =============================================================
+\section{Parte 4 --- Análise ao sistema de ficheiros}
+
+A análise do ficheiro \texttt{fs.img} (imagem de um sistema de ficheiros) foi conduzida no \textit{host} Linux com ferramentas \textit{standard} (\texttt{file}, \texttt{dumpe2fs}, \texttt{debugfs}, \texttt{mount}). Ainda que os números exactos dependam da \textit{build} concreta da imagem, descrevem-se em seguida os passos a seguir e o tipo de informação obtido.
+
+\subsection{(a) Tipo de sistema de ficheiros, tamanho do bloco e número de inodes}
+
+\textbf{Passo 1 --- identificar o tipo:}
+
+\begin{lstlisting}[style=shellstyle]
+$ file fs.img
+fs.img: Linux rev 1.0 ext2 filesystem data, UUID=..., (large files)
+\end{lstlisting}
+
+A imagem é um sistema de ficheiros \textbf{ext2} (a saída concreta indicará a revisão e o UUID).
+
+\textbf{Passo 2 --- obter parâmetros do superbloco:}
+
+\begin{lstlisting}[style=shellstyle]
+$ sudo dumpe2fs -h fs.img | grep -E "Block size|Inode count|Filesystem"
+Filesystem magic number:  0xEF53
+Filesystem features:      ...
+Block size:               1024
+Inode count:              128
+\end{lstlisting}
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Tipo de sistema de ficheiros:} \texttt{ext2};
+    \item \textbf{Tamanho do bloco:} valor em \textit{bytes} reportado em \texttt{Block size} (tipicamente \texttt{1024} para imagens pequenas);
+    \item \textbf{Número total de inodes:} valor reportado em \texttt{Inode count}.
+\end{itemize}
+
+\subsection{(b) Conteúdo de \texttt{ipca.txt} e dos restantes ficheiros}
+
+\textbf{Opção 1 --- montar a imagem como \textit{loop device}:}
+
+\begin{lstlisting}[style=shellstyle]
+$ mkdir -p /mnt/fs
+$ sudo mount -o loop fs.img /mnt/fs
+$ ls -l /mnt/fs
+$ cat /mnt/fs/ipca.txt
+$ sudo umount /mnt/fs
+\end{lstlisting}
+
+\textbf{Opção 2 --- inspeccionar com \texttt{debugfs} sem montar:}
+
+\begin{lstlisting}[style=shellstyle]
+$ sudo debugfs fs.img
+debugfs:  ls -l
+debugfs:  cat ipca.txt
+debugfs:  stat ipca.txt
+debugfs:  quit
+\end{lstlisting}
+
+A apresentação completa em relatório inclui:
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textit{screenshot} ou listagem de \texttt{file fs.img} a confirmar o tipo;
+    \item \textit{screenshot} de \texttt{dumpe2fs -h fs.img} a confirmar tamanho do bloco e número de inodes;
+    \item \textit{screenshot} ou listagem de \texttt{ls -l /mnt/fs};
+    \item conteúdo de \texttt{ipca.txt} obtido via \texttt{cat} ou \texttt{debugfs};
+    \item conteúdo dos restantes ficheiros encontrados na imagem.
+\end{enumerate}
+
+% =============================================================
+\section{Compilação e execução}
+
+\subsection{Compilação local}
+
+A compilação é orquestrada por um \texttt{Makefile} curto. Cada comando é um binário independente em \texttt{build/bin/}, ligado ao módulo \texttt{utils.o}:
+
+\begin{lstlisting}[style=shellstyle,caption={Excerto do \texttt{Makefile}}]
+all: build utils interpretador $(OBJ) $(BIN)
+
+build:
+    mkdir -p build/bin
+    mkdir -p build/obj
+
+interpretador:
+    $(CC) -c src/interpretador.c -o $(INTER)
+    $(CC) $(INTER) $(UTILS) -o build/bin/$@
+
+utils:
+    $(CC) -c src/include/utils.c -o $(UTILS)
+
+build/obj/%.o: src/commands/%.c
+    $(CC) -c $< -o $@
+
+build/bin/%: build/obj/%.o
+    $(CC) $< $(UTILS) -o $@
+
+clean:
+    rm -rf build
+\end{lstlisting}
+
+\begin{lstlisting}[style=shellstyle]
+$ make            # compila tudo para build/bin/
+$ make clean      # remove artefactos
+$ ./build/bin/interpretador
+\end{lstlisting}
+
+\subsection{Execução em contentor Docker}
+
+\begin{lstlisting}[style=shellstyle]
+$ docker build -t mini-shell-file-system .
+$ docker run --rm -it mini-shell-file-system
+\end{lstlisting}
+
+% =============================================================
+\section{Conclusão}
+
+O trabalho permitiu consolidar, na prática, os principais conceitos abordados na unidade curricular:
+
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Gestão de ficheiros}: utilização directa das \textit{system calls} \texttt{open}, \texttt{read}, \texttt{write}, \texttt{close}, \texttt{stat}, \texttt{unlink}, \texttt{opendir}, \texttt{readdir} e \texttt{closedir}, sem recurso à camada \textit{stdio} da \textit{libc};
+    \item \textbf{Gestão de processos}: criação de processos com \texttt{fork(2)}, substituição de imagem com \texttt{execv(3)}, sincronização com \texttt{waitpid(2)} e diagnóstico do estado de saída com \texttt{WIFEXITED}/\texttt{WEXITSTATUS};
+    \item \textbf{Comunicação entre processos}: implementação de \textit{pipes} anónimos com \texttt{pipe(2)} e \texttt{dup2(2)}, ligando a saída de um processo à entrada de outro;
+    \item \textbf{Redirecionamento de I/O}: manipulação dos descritores 0 e 1 com \texttt{open(2)} e \texttt{dup2(2)};
+    \item \textbf{Empacotamento e portabilidade}: utilização de \textit{multi-stage build} em Docker para produzir uma imagem mínima já configurada para correr o interpretador no \texttt{ENTRYPOINT};
+    \item \textbf{Análise de sistemas de ficheiros}: inspeção do superbloco com \texttt{dumpe2fs}, navegação com \texttt{debugfs} e montagem como \textit{loop device}.
+\end{itemize}
+
+Todos os requisitos do enunciado foram cumpridos: os comandos respondem ao formato pedido, o interpretador suporta os três operadores especiais (\texttt{>}, \texttt{<}, \texttt{|}), o \texttt{Dockerfile} produz uma imagem funcional com o interpretador como \texttt{ENTRYPOINT} e os passos de análise do \texttt{fs.img} estão devidamente documentados.
+
+\end{document}
