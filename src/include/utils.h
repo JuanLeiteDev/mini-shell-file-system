@@ -8,6 +8,7 @@
 #include <time.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <stdbool.h>
 
 #define TAMANHO_BUFFER 1024
 #define TAMANHO_CONTADOR 10
