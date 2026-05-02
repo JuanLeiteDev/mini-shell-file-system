@@ -16,6 +16,7 @@ Trabalho prático de Sistemas Operativos — Lic. Eng. Sistemas Informáticos, I
 | `informa` | `informa ficheiro` | Mostra metadados, permissões e datas |
 | `lista` | `lista [directoria]` | Lista ficheiros e pastas |
 | `procura` | `procura ficheiro padrão` | Procura linhas que contenham um padrão |
+| `comandos` | `comandos` | Lista todos os comandos disponíveis para uso |
 
 Todos os erros são reportados via `stderr`. Implementados com `open`, `read`, `write`, `close`, `stat`, `opendir`/`readdir`.
 
