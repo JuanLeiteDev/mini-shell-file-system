@@ -189,20 +189,17 @@ int main(){
                 if(pid2 == 0){
                     close(fd[0]);
                     dup2(fd[1], STDOUT_FILENO);
-                    close(fd[1]); // Bug 4: fecha fd original após dup2
+                    close(fd[1]);
                     argumentos[conta_pipe.arr[0]] = NULL;
                     execv(caminho_comandos, argumentos);
                     escrevaErro("Erro ao executar primeiro comando.\n");
                     _exit(1);
                 } else {
-                    // Bug 1: fecha escrita ANTES de executar segundo comando
-                    // (sem waitpid — ambos correm concorrentemente, evitando deadlock)
                     close(fd[1]);
                     for(int i = 0;; i++){
                         argumentos[i] = argumentos[i+conta_pipe.arr[0]+1];
                         if(argumentos[i] == NULL) break;
                     }
-                    // Bug 2: segundo comando ausente após '|'
                     if(argumentos[0] == NULL){
                         escrevaErro("Nenhum comando especificado após '|'.\n");
                         _exit(1);
@@ -210,7 +207,7 @@ int main(){
                     obterDiretorioRaiz(caminho_comandos, caminhoLen);
                     concatenarString(caminho_comandos, argumentos[0]);
                     dup2(fd[0], STDIN_FILENO);
-                    close(fd[0]); // Bug 4: fecha fd original após dup2
+                    close(fd[0]);
                     execv(caminho_comandos, argumentos);
                     escrevaErro("Erro ao executar segundo comando.\n");
                     _exit(1);
