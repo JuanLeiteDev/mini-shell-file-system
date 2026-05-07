@@ -1,8 +1,7 @@
-FROM alpine:3.20 AS builder
-RUN apk add --no-cache build-base
+FROM gcc:14 AS builder
 WORKDIR /app
 COPY . .
-RUN make && strip build/bin/*
+RUN make
 
 FROM alpine:3.20
 COPY --from=builder /app/build/bin /usr/local/bin/
